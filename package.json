@@ -1,0 +1,15 @@
+{
+  "name": "nodespeedtests",
+  "version": "1.0.0",
+  "description": "Node.js app to taget Core API sync and async",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mihai",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.1.5",
+    "express": "^4.15.2"
+  }
+}
