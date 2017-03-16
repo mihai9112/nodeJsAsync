@@ -11,7 +11,7 @@ app.get('/', function (req, res) {
     var queries = [];
     var count = 0;
     
-    for(var i = 0; i < 5; i++){
+    for(var i = 0; i < 5; i++){ //Increase here the number of queries
         queries.push(getQuery());
     }
 
