@@ -3,16 +3,21 @@ var async = require('async');
 const https = require('https');
 const http = require('http');
 
-const pathOfRequest = '/v1.0/retrieve.json?token=<insertToken>&groupspace=<insertGroupspace>&logging=off';
+const pathOfRequest = '/v1.0/retrieve.json?token=<insertToken>&groupspace=Airlines&logging=off';
 
 var app = express()
 
 app.get('/', function (req, res) {
     var queries = [];
     var count = 0;
+
+    var distinctQueries = { 
+        "{Twitter Mentions - Negative}" : [ "crop [Brand] ~> group by 1 month ~> crush ~> average", "crop [Country] ~> group by 1 month ~> crush ~> average ~> replace {Twitter Mentions - Negative} with {Category Average} ~> calculate 'Round({Category Average}, 0)' returns {Category Average}","group by 1 month ~> crush ~> sum ~> rank competition [Brand] ~> replace {Twitter Mentions - Negative Rank by Brand} with {Rank} ~> filter {Rank}" ], 
+        "{Effective Base}{N Weighted}{Unweighted Base}{Weighted Base}" : ["crop [Brand][Metric] ~> filter {Weighted Base}{N Weighted} ~> group by 1 month ~> crush ~> sum ~> calculate '{N Weighted}/{Weighted Base}' returns {Category Average} ~> crop [Metric] ~> average", "crop [Brand][Metric] ~> group by 1 month ~> crush ~> sum ~> calculate 'Round({N Weighted}/{Weighted Base}, 2)' includes {N Value} ~> replace {Unweighted Base} with {Sample Size}", "crop [Brand][Metric] ~> filter {Weighted Base}{N Weighted} ~> group by 1 month ~> crush ~> sum ~> calculate 'Round({N Weighted}/{Weighted Base}, 2)' returns {N Value} ~> rank competition [Brand] ~> replace {N Value Rank by Brand} with {Rank} ~> filter {Rank}","crop [Metric] ~> filter {Effective Base} ~> group by 1 month ~> crush ~> sum ~> replace {Effective Base} with {Effective Base Category Total}"]
+    }
     
-    for(var i = 0; i < 20; i++){ //Increase here the number of queries
-        queries.push(getQuery());
+    for(key in distinctQueries){
+        queries.push(getQuery(key, distinctQueries[key]));
     }
 
     var modules = [1];
@@ -87,19 +92,14 @@ app.listen(3000, function () {
 })
 
 
-function getQuery(){
+function getQuery(signal, tractors){
     var query = JSON.stringify(
            {
-      "time_from": "2015-06-01",
-      "time_to": "2016-12-01",
-      "signal": "{Effective Base}{N Weighted}{Unweighted Base}{Weighted Base}",
+      "time_from": "2016-01-01T00:00:00",
+      "time_to": "2017-01-01T00:00:00",
+      "signal":  '"' + signal + '"',
       "context": "[Country:UK][Metric:Believe - Brand delivers on its promises][Brand:Monarch (Short Haul)][Brand:Norwegian (Short Haul)][Brand:KLM (Short Haul)][Brand:Aer Lingus (Short Haul)][Brand:Air France (Short Haul)][Brand:British Airways (Short Haul)][Brand:easyJet (Short Haul)][Subgroup:Total Sample]",
-      "tractors": [
-        "crop [Brand][Metric] ~> filter {Weighted Base}{N Weighted} ~> group by week ~> pad time ~> roll by 8 last ~> sum ~> calculate '{N Weighted}/{Weighted Base}' returns {Category Average} ~> crop [Metric] ~> average",
-        "crop [Brand][Metric] ~> group by week ~> pad time ~> roll by 8 last ~> sum ~> calculate 'Round({N Weighted}/{Weighted Base}, 2)' includes {N Value} ~> replace {Unweighted Base} with {Sample Size}",
-        "crop [Brand][Metric] ~> filter {Weighted Base}{N Weighted} ~> group by week ~> pad time ~> roll by 8 last ~> sum ~> calculate 'Round({N Weighted}/{Weighted Base}, 2)' returns {N Value} ~> rank olympic [Brand] ~> replace {N Value Rank by Brand} with {Rank} ~> filter {Rank}",
-        "crop [Metric] ~> filter {Effective Base} ~> group by week ~> pad time ~> roll by 8 last ~> sum ~> replace {Effective Base} with {Effective Base Category Total}"
-      ],
+      "tractors": tractors,
       "tractor": "sort by time"
     });
     return query;
